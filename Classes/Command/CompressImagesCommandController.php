@@ -77,7 +77,7 @@ class CompressImagesCommandController extends CommandController
         foreach ($files as $file) {
             if ($file instanceof \Schmitzal\Tinyimg\Domain\Model\File) {
                 $file = $this->resourceFactory->getFileObject($file->getUid());
-                if (filesize(GeneralUtility::getFileAbsFileName($file->getPublicUrl())) > 0) {
+                if (filesize(urldecode(GeneralUtility::getFileAbsFileName($file->getPublicUrl()))) > 0) {
                     $this->compressImageService->initializeCompression($file);
                     $fileDeletionAspect->cleanupProcessedFilesPostFileReplace($file, '');
                 }
