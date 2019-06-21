@@ -6,7 +6,9 @@ use Aws\S3\Exception\S3Exception;
 use Aws\S3\S3Client;
 
 use TYPO3\CMS\Core\Core\Environment;
+use TYPO3\CMS\Core\Resource\Driver\LocalDriver;
 use TYPO3\CMS\Core\Resource\File;
+use TYPO3\CMS\Core\Resource\ResourceFactory;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Resource\Index\Indexer;
@@ -15,6 +17,8 @@ use TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
 use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
+use TYPO3\CMS\Core\Resource\StorageRepository;
+use TYPO3\CMS\Core\Resource\ResourceStorage;
 
 /**
  * Class CompressImageService
@@ -98,6 +102,7 @@ class CompressImageService
      */
     public function initializeCompression($file)
     {
+        $fileCreated = false;
         $this->initAction();
 
         if ($this->isFileInExcludeFolder($file)) {
@@ -114,9 +119,26 @@ class CompressImageService
                 if ($this->checkForAmazonCdn($file)) {
                     $fileSize = $this->pushToTinyPngAndStoreToCdn($file);
                 } else {
-                    $publicUrl = PATH_site . $file->getPublicUrl();
+                    $publicUrl = PATH_site . urldecode($file->getPublicUrl());
                     $source = \Tinify\fromFile($publicUrl);
-                    $source->toFile($publicUrl);
+
+                    // Sanitize URL in order to check if there are any special characters.
+                    $localDriver = GeneralUtility::makeInstance(LocalDriver::class);
+                    $sanitizedFileName = $localDriver->sanitizeFileName($file->getName());
+
+                    // Check if file name should be changed due to new file name. If so replace file.
+                    if ($file->getName() != $sanitizedFileName) {
+                        $source->toFile($sanitizedFileName);
+                        /** @var ResourceStorage $storage */
+                        $storage = $file->getStorage();
+                        $newFile = $storage->addFile($sanitizedFileName, $file->getParentFolder());
+                        $storage->deleteFile($file);
+                        $file = $newFile;
+                        $fileCreated = true;
+                    } else {
+                        $source->toFile($publicUrl);
+                    }
+
                     $fileSize = $this->setCompressedForCurrentFile($file);
                 }
                 if ((int)$fileSize !== 0) {
@@ -130,7 +152,9 @@ class CompressImageService
             $this->addMessageToFlashMessageQueue('debugMode', [], FlashMessage::INFO);
         }
 
-        $this->updateFileInformation($file);
+        if (!$fileCreated) {
+            $this->updateFileInformation($file);
+        }
     }
 
     /**
