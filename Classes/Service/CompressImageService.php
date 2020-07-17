@@ -8,6 +8,7 @@ use Aws\S3\S3Client;
 use Schmitzal\Tinyimg\Domain\Repository\FileRepository;
 use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\Resource\File;
+use TYPO3\CMS\Core\Resource\ProcessedFile;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Resource\Index\Indexer;
@@ -172,7 +173,28 @@ class CompressImageService
         } else {
             $this->addMessageToFlashMessageQueue('debugMode', [], FlashMessage::INFO);
         }
+    }
 
+    /**
+     * @param File $file
+     * @param ProcessedFile $processedFile
+     */
+    public function compressProcessedFile(File $file, ProcessedFile $processedFile): void
+    {
+        $this->initAction();
+        if ($this->isFileInExcludeFolder($file)) {
+            return;
+        }
+        if (!in_array(strtolower($file->getMimeType()), ['image/png', 'image/jpeg'], true)) {
+            return;
+        }
+        if ((int)$this->settings['debug'] !== 0) {
+            return;
+        }
+
+        $publicUrl = $this->getPublicPath() . urldecode($processedFile->getPublicUrl());
+        $source = \Tinify\fromFile($publicUrl);
+        $source->toFile($publicUrl);
     }
 
     /**
