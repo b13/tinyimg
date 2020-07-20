@@ -182,16 +182,16 @@ class CompressImageService
     public function compressProcessedFile(File $file, ProcessedFile $processedFile): void
     {
         $this->initAction();
+
+        if ((int)$this->settings['debug'] !== 0 || (bool)$this->extConf['enableProcessedFilesCompression'] === false) {
+            return;
+        }
         if ($this->isFileInExcludeFolder($file)) {
             return;
         }
         if (!in_array(strtolower($file->getMimeType()), ['image/png', 'image/jpeg'], true)) {
             return;
         }
-        if ((int)$this->settings['debug'] !== 0) {
-            return;
-        }
-
         $publicUrl = $this->getPublicPath() . urldecode($processedFile->getPublicUrl());
         $source = \Tinify\fromFile($publicUrl);
         $source->toFile($publicUrl);
