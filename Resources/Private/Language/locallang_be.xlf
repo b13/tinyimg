@@ -24,6 +24,9 @@
 			<trans-unit id="version">
                 <source>Enter the AWS version</source>
             </trans-unit>
+			<trans-unit id="enableProcessedFilesCompression">
+				<source>Enable Compression on Processed Files</source>
+			</trans-unit>
 		</body>
 	</file>
 </xliff>
