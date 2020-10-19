@@ -15,7 +15,7 @@ class LocalImageProcessor extends \TYPO3\CMS\Core\Resource\Processing\LocalImage
      * @param TaskInterface $task
      * @throws \InvalidArgumentException
      */
-    public function processTask(TaskInterface $task)
+    public function processTask(TaskInterface $task): void
     {
         parent::processTask($task);
         if ($task->isExecuted() && $task->getTargetFile()->usesOriginalFile() === false) {
