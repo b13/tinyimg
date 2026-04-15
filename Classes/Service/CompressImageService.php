@@ -230,7 +230,7 @@ class CompressImageService implements SingletonInterface
      */
     protected function isFileInExcludeFolder(File $file): bool
     {
-        if (!empty($this->extConf['excludeFolders'])) {
+        if (!empty($this->extConf['excludeFolders'] ?? [])) {
             $excludeFolders = GeneralUtility::trimExplode(',', $this->extConf['excludeFolders'], true);
             $identifier = $file->getIdentifier();
             foreach ($excludeFolders as $excludeFolder) {
@@ -249,12 +249,12 @@ class CompressImageService implements SingletonInterface
 
     protected function getApiKey(): string
     {
-        return (string)$this->extConf['apiKey'];
+        return (string)($this->extConf['apiKey'] ?? '');
     }
 
     protected function getUseCdn(): bool
     {
-        return (bool)$this->extConf['useCdn'];
+        return (bool)($this->extConf['useCdn'] ?? false);
     }
 
     protected function updateFileInformation(File $file): void
